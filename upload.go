@@ -1,12 +1,13 @@
 package main
 
 import (
+	"github.com/neverlock/utility/httplog"
 	"html/template"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
-	"log"
-	"io/ioutil"
 )
 
 //Compile templates on start
@@ -22,19 +23,20 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	//GET displays the upload form.
 	case "GET":
+		httplog.HttpLogln(r)
 		display(w, "upload", nil)
 
 	//POST takes the uploaded file(s) and saves it to disk.
 	case "POST":
 		//get the multipart reader for the request.
+		httplog.HttpLogln(r)
 		reader, err := r.MultipartReader()
-//		r.ParseMultipartForm(0)
+		//		r.ParseMultipartForm(0)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 
 		//copy each part to destination.
 		for {
@@ -46,11 +48,11 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			if part.FormName() == "path" {
 				j, err := ioutil.ReadAll(part)
 				if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)//do something
-				return
+					http.Error(w, err.Error(), http.StatusInternalServerError) //do something
+					return
 				}
-			log.Println(string(j))
-			//log.Println(part)
+				log.Println(string(j))
+				//log.Println(part)
 			}
 
 			//if part.FileName() is empty, skip this iteration.
@@ -84,5 +86,7 @@ func main() {
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("uploaded"))))
 
 	//Listen on port 8080
-	http.ListenAndServe(":8080", nil)
+	bind := ":8080"
+	log.Printf("listening on %s...\n", bind)
+	http.ListenAndServe(bind, nil)
 }
